@@ -7,25 +7,31 @@
 
 VideoThread::VideoThread(QObject *parent)
     : QThread(parent)
-    , m_cams(new videoInput)
+    , m_cams(0)
     , m_openCam(-1)
 {
-    Q_ASSERT(qApp);
-    Q_ASSERT(connect(qApp, SIGNAL(aboutToQuit()), SLOT(shutdown()), Qt::DirectConnection));
-    Q_ASSERT(connect(&m_clock, SIGNAL(timeout()), SLOT(poll())));
+
 }
 
 VideoThread::~VideoThread()
 {
-    if (m_openCam > -1)
-        m_cams->stopDevice(m_openCam);
-    delete m_cams;
+    if (m_cams) {
+        if (m_openCam > -1)
+            m_cams->stopDevice(m_openCam);
+        delete m_cams;
+    }
 }
 
 void VideoThread::run()
 {
+    m_cams = new videoInput;
     Q_ASSERT(m_cams);
     searchCameras();
+
+    Q_ASSERT(qApp);
+    Q_ASSERT(connect(qApp, SIGNAL(aboutToQuit()), SLOT(shutdown()), Qt::DirectConnection));
+    Q_ASSERT(connect(&m_clock, SIGNAL(timeout()), SLOT(poll())));
+
     exec();
 }
 
@@ -34,7 +40,7 @@ void VideoThread::openCamera(int index)
     Q_ASSERT(m_cams);
     if (index < -1 || index >= m_cams->devicesFound) {
         qCritical() << "Camera index out of range:" << index;
-        //return;
+        return;
     }
 
     closeCamera();
@@ -52,12 +58,13 @@ void VideoThread::openCamera(int index)
         */
         m_cams->setupDevice(m_openCam,320,240); // force resolution for iSight in Parallels
         m_clock.start(40);
-        qDebug() << "opened camera" << m_openCam;
     }
 }
 
 void VideoThread::poll()
 {
+    Q_ASSERT(m_cams);
+
     if ((m_openCam > -1) && m_cams->isFrameNew(m_openCam)) {
         QImage frame  = QImage(m_cams->getWidth(m_openCam),
                                m_cams->getHeight(m_openCam),
@@ -69,16 +76,20 @@ void VideoThread::poll()
 
 void VideoThread::searchCameras()
 {
-    int nCams = m_cams->listDevices();
+    Q_ASSERT(m_cams);
+
+    // stupid, that videoInput doesn't do that itself, but...
+    int nCams = m_cams->devicesFound = m_cams->listDevices();
     QStringList camNames;
     for(int i = 0; i < nCams; ++i)
         camNames << m_cams->getDeviceName(i);
     emit foundCameras(camNames);
-    qDebug() << "Found video devices" << camNames.size();
 }
 
 void VideoThread::closeCamera()
 {
+    Q_ASSERT(m_cams);
+
     m_clock.stop();
     if (m_openCam > -1)
         m_cams->stopDevice(m_openCam);

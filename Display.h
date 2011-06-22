@@ -16,6 +16,7 @@ public:
     ~Display();
 public slots:
     void showFrame(const QImage& frame);
+    void populateDeviceList(const QStringList& devNames);
 
 private:
     Ui::Display *ui;
