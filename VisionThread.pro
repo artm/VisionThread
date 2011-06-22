@@ -1,9 +1,3 @@
-#-------------------------------------------------
-#
-# Project created by QtCreator 2011-06-22T13:37:22
-#
-#-------------------------------------------------
-
 QT       += core gui
 
 TARGET = VisionThread
@@ -16,3 +10,8 @@ SOURCES += main.cpp\
 HEADERS  += Display.h
 
 FORMS    += Display.ui
+
+# video input
+INCLUDEPATH += $$quote(~/src/videoInput)
+LIBS += -L$$quote(~/src/build/videoInput-mingw) -lvideoInput
+LIBS += -luuid -lstrmiids -lole32 -loleaut32
