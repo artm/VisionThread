@@ -14,6 +14,8 @@ class Display : public QMainWindow
 public:
     explicit Display(QWidget *parent = 0);
     ~Display();
+public slots:
+    void showFrame(const QImage& frame);
 
 private:
     Ui::Display *ui;

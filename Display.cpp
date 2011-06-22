@@ -12,3 +12,8 @@ Display::~Display()
 {
     delete ui;
 }
+
+void Display::showFrame(const QImage &frame)
+{
+    ui->videoLabel->setPixmap( QPixmap::fromImage(frame) );
+}
