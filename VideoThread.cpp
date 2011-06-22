@@ -22,24 +22,20 @@ VideoThread::~VideoThread()
 void VideoThread::run()
 {
     Q_ASSERT(m_cams);
-    qDebug() << "starting the video thread's main loop";
-    int nCams = m_cams->listDevices();
-    QStringList camNames;
-    for(int i = 0; i < nCams; ++i)
-        camNames << m_cams->getDeviceName(i);
-    emit foundCameras(camNames);
-    qDebug() << "Found video devices" << camNames;
-
+    searchCameras();
     exec();
 }
 
 void VideoThread::openCamera(int index)
 {
-    if (m_openCam > -1)
-        m_cams->stopDevice(m_openCam);
+    Q_ASSERT(m_cams);
+    if (index < -1 || index >= m_cams->devicesFound) {
+        qCritical() << "Camera index out of range:" << index;
+        //return;
+    }
 
+    closeCamera();
     m_openCam = index;
-
     if (m_openCam > -1) {
         qDebug() << "opened camera" << m_openCam;
         m_cams->setIdealFramerate(m_openCam, 25);
@@ -66,5 +62,22 @@ void VideoThread::poll()
         m_cams->getPixels(m_openCam, frame.bits(), true, true);
         emit gotFrame(frame);
     }
+}
+
+void VideoThread::searchCameras()
+{
+    int nCams = m_cams->listDevices();
+    QStringList camNames;
+    for(int i = 0; i < nCams; ++i)
+        camNames << m_cams->getDeviceName(i);
+    emit foundCameras(camNames);
+    qDebug() << "Found video devices" << camNames.size();
+}
+
+void VideoThread::closeCamera()
+{
+    m_clock.stop();
+    if (m_openCam > -1)
+        m_cams->stopDevice(m_openCam);
 }
 

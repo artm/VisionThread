@@ -21,7 +21,9 @@ signals:
     void gotFrame(QImage frame);
 
 public slots:
+    void searchCameras();
     void openCamera(int index=0);
+    void closeCamera();
     void poll();
 
 protected:
