@@ -3,12 +3,15 @@
 #include "VideoThread.h"
 
 #include <QDebug>
+#include <QApplication>
 
 VideoThread::VideoThread(QObject *parent)
     : QThread(parent)
     , m_cams(new videoInput)
     , m_openCam(-1)
 {
+    Q_ASSERT(qApp);
+    Q_ASSERT(connect(qApp, SIGNAL(aboutToQuit()), SLOT(shutdown()), Qt::DirectConnection));
     Q_ASSERT(connect(&m_clock, SIGNAL(timeout()), SLOT(poll())));
 }
 
@@ -37,7 +40,6 @@ void VideoThread::openCamera(int index)
     closeCamera();
     m_openCam = index;
     if (m_openCam > -1) {
-        qDebug() << "opened camera" << m_openCam;
         m_cams->setIdealFramerate(m_openCam, 25);
         m_cams->setAutoReconnectOnFreeze(m_openCam,true,7);
 
@@ -50,6 +52,7 @@ void VideoThread::openCamera(int index)
         */
         m_cams->setupDevice(m_openCam,320,240); // force resolution for iSight in Parallels
         m_clock.start(40);
+        qDebug() << "opened camera" << m_openCam;
     }
 }
 
@@ -79,5 +82,11 @@ void VideoThread::closeCamera()
     m_clock.stop();
     if (m_openCam > -1)
         m_cams->stopDevice(m_openCam);
+}
+
+void VideoThread::shutdown()
+{
+    exit();
+    wait(2000);
 }
 

@@ -26,6 +26,8 @@ public slots:
     void closeCamera();
     void poll();
 
+    void shutdown();
+
 protected:
     videoInput * m_cams;
     int m_openCam;
