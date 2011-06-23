@@ -33,3 +33,11 @@ The main() looks like a bit of a highly coupled boilerplate mess though.
 
 Thread waiter may now be asked to produce a registered thread, which makes code a bit cleaner.
 
+## Reusing useful GUI functionality
+
+While it's up to the application what to do with the incoming video frames, the device controls will most probably
+be always pretty much the same. At the moment large portion of main() is taken up by connecting VideoCapture to the
+widgets (which are manually added to the GUI in the designer). It would have been much better, if the widgets were
+provided by a reusable widget, aware of the VideoCapture API.
+
+

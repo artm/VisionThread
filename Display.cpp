@@ -25,10 +25,10 @@ void Display::populateDeviceList(const QStringList &devNames)
 {
     ui->videoDevices->clear();
     if (devNames.size()>0) {
-        ui->videoDevices->setEnabled(true);
+        ui->videoControls->setEnabled(true);
         ui->videoDevices->addItems(devNames);
     } else {
-        ui->videoDevices->setEnabled(false);
+        ui->videoControls->setEnabled(false);
         ui->videoDevices->addItem("No video input detected");
     }
 }
