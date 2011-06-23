@@ -4,6 +4,7 @@
 
 #include <QGridLayout>
 #include <QComboBox>
+#include <QSettings>
 
 VideoCaptureControls::VideoCaptureControls(QWidget *parent) :
     QWidget(parent)
@@ -26,7 +27,8 @@ VideoCaptureControls::VideoCaptureControls(QWidget *parent) :
     Q_ASSERT(connect(m_capture, SIGNAL(autoResolution(int,int)), SLOT(showResolution(int, int))));
     Q_ASSERT(connect(this, SIGNAL(resolutionChosen(int,int)), m_capture, SLOT(setupResolution(int,int))));
     Q_ASSERT(connect(m_resolutionSelector, SIGNAL(activated(QString)), SLOT(resolutionChosen(QString))));
-    Q_ASSERT(connect(m_deviceSelector, SIGNAL(activated(int)), m_capture, SLOT(openCamera(int))));
+    Q_ASSERT(connect(this, SIGNAL(deviceChosen(int)), m_capture, SLOT(openCamera(int))));
+    Q_ASSERT(connect(m_deviceSelector, SIGNAL(currentIndexChanged(int)), SIGNAL(deviceChosen(int))));
 
     m_capture->thread()->start();
 }
@@ -68,13 +70,58 @@ void VideoCaptureControls::showResolution(int w, int h)
             return;
         }
     }
-    m_resolutionSelector->insertItem(1,QString("%1x%2 (chosen by OS)").arg(w).arg(h));
+    m_resolutionSelector->insertItem(1,QString("%1x%2").arg(w).arg(h));
     m_resolutionSelector->setCurrentIndex(1);
 }
 
 VideoCapture * VideoCaptureControls::capture()
 {
     return m_capture;
+}
+
+void VideoCaptureControls::save(QSettings &s)
+{
+    s.beginGroup("VideoCapture");
+    s.setValue("deviceIndex", m_deviceSelector->currentIndex());
+    s.setValue("deviceName", m_deviceSelector->currentText());
+    s.setValue("resolution", m_resolutionSelector->currentText());
+    s.endGroup();
+}
+
+void VideoCaptureControls::load(QSettings &s)
+{
+    s.beginGroup("VideoCapture");
+    int dev = s.value("deviceIndex", 0).toInt();
+    QString devName = s.value("deviceName").toString();
+    QString resName = s.value("resolution").toString();
+    s.endGroup();
+
+    // set up device
+    if (m_deviceSelector->itemText(dev) != devName) {
+        // try to find by name or give up
+        dev = 0;
+        for(int i = 1; i<m_deviceSelector->count(); ++i) {
+            if (devName == m_deviceSelector->itemText(i)) {
+                dev = i;
+                break;
+            }
+        }
+        m_deviceSelector->setCurrentIndex(dev);
+    }
+
+    // set up resolution
+    int index = 0;
+    for(int i=1; i<m_resolutionSelector->count(); ++i) {
+        if (resName == m_resolutionSelector->itemText(i)) {
+            index = i;
+            break;
+        }
+    }
+    if (index == 0) {
+        resName = m_resolutionSelector->itemText(0);
+    }
+    m_resolutionSelector->setCurrentIndex(index);
+    resolutionChosen(resName);
 }
 
 

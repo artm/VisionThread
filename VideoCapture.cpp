@@ -43,7 +43,7 @@ void VideoCapture::onThreadStarted()
 void VideoCapture::openCamera(int index)
 {
     Q_ASSERT(m_cams);
-    if (index < -1 || index >= m_cams->devicesFound) {
+    if (index < 0 || index >= m_cams->devicesFound) {
         qCritical() << "Camera index out of range:" << index;
         return;
     }
@@ -51,19 +51,18 @@ void VideoCapture::openCamera(int index)
     closeCamera();
 
     m_openCam = index;
-    if (m_openCam > -1) {
-        m_cams->setIdealFramerate(m_openCam, 25);
-        m_cams->setAutoReconnectOnFreeze(m_openCam,true,7);
 
-        if (m_resW && m_resH)
-            m_cams->setupDevice(m_openCam,m_resW,m_resH);
-        else {
-            m_cams->setupDevice(m_openCam);
-            // let the world know what windows has chosen for us...
-            emit autoResolution( m_cams->getWidth(m_openCam), m_cams->getHeight(m_openCam) );
-        }
-        m_clock->start(40);
+    m_cams->setIdealFramerate(m_openCam, 25);
+    m_cams->setAutoReconnectOnFreeze(m_openCam,true,7);
+
+    if (m_resW && m_resH)
+        m_cams->setupDevice(m_openCam,m_resW,m_resH);
+    else {
+        m_cams->setupDevice(m_openCam);
+        // let the world know what windows has chosen for us...
+        emit autoResolution( m_cams->getWidth(m_openCam), m_cams->getHeight(m_openCam) );
     }
+    m_clock->start(40);
 }
 
 void VideoCapture::onClockTick()

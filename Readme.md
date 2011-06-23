@@ -40,4 +40,8 @@ be always pretty much the same. At the moment large portion of main() is taken u
 widgets (which are manually added to the GUI in the designer). It would have been much better, if the widgets were
 provided by a reusable widget, aware of the VideoCapture API.
 
+Actually, we went further and hid the VideoCapture (together with its thread and ThreadWaiter) in VideoCaptureControls.
 
+## Persistence
+
+The client code may ask the VideoCaptureControls to persist in QSettings instance.

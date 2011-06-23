@@ -6,6 +6,7 @@
 class QComboBox;
 class VideoCapture;
 class ThreadWaiter;
+class QSettings;
 
 class VideoCaptureControls : public QWidget
 {
@@ -15,8 +16,11 @@ public:
     ~VideoCaptureControls();
 
     VideoCapture * capture();
+    void save(QSettings& s);
+    void load(QSettings& s);
 
 signals:
+    void deviceChosen(int index);
     void resolutionChosen(int w, int h);
 
 public slots:
