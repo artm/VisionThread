@@ -7,11 +7,10 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    Display w;
-    VideoCapture v;
-
     ThreadWaiter waiter;
-    waiter << v.thread();
+    VideoCapture v(waiter.makeThread());
+
+    Display w;
 
     Q_ASSERT(QObject::connect(&v, SIGNAL(gotFrame(QImage)), &w, SLOT(showFrame(QImage))));
     Q_ASSERT(QObject::connect(&v, SIGNAL(foundCameras(QStringList)), &w, SLOT(populateDeviceList(QStringList))));

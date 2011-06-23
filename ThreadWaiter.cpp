@@ -27,3 +27,10 @@ void ThreadWaiter::onAboutToQuit()
         thread->wait(2000);
     }
 }
+
+QThread * ThreadWaiter::makeThread()
+{
+    QThread * thread = new QThread(this);
+    operator <<(thread);
+    return thread;
+}

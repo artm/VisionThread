@@ -16,6 +16,7 @@ public:
 
     ThreadWaiter& operator<<(QThread *);
     ThreadWaiter& operator<<(QThread &);
+    QThread * makeThread();
 
 signals:
 
