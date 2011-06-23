@@ -22,9 +22,10 @@ VideoCapture::VideoCapture(QThread * thread, QObject *parent)
 
 VideoCapture::~VideoCapture()
 {
-    qDebug() << "Shutting down video capture";
-    if (m_cams)
+    if (m_cams) {
         closeCamera();
+        qDebug() << "Shutting down video capture";
+    }
 }
 
 void VideoCapture::onThreadStarted()

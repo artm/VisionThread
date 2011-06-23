@@ -7,11 +7,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         Display.cpp \
     ThreadWaiter.cpp \
-    VideoCapture.cpp
+    VideoCapture.cpp \
+    VideoCaptureControls.cpp
 
 HEADERS  += Display.h \
     ThreadWaiter.h \
-    VideoCapture.h
+    VideoCapture.h \
+    VideoCaptureControls.h
 
 FORMS    += Display.ui
 
