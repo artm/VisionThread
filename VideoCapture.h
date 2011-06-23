@@ -1,5 +1,5 @@
-#ifndef VIDEOTHREAD_H
-#define VIDEOTHREAD_H
+#ifndef VIDEOCAPTURE_H
+#define VIDEOCAPTURE_H
 
 #include <QThread>
 #include <QImage>
@@ -8,13 +8,12 @@
 
 class videoInput;
 
-class VideoThread : public QThread
+class VideoCapture : public QObject
 {
     Q_OBJECT
 public:
-    explicit VideoThread(QObject *parent = 0);
-    ~VideoThread();
-
+    explicit VideoCapture(QThread * thread, QObject *parent = 0);
+    ~VideoCapture();
 
 signals:
     void foundCameras(QStringList);
@@ -22,20 +21,19 @@ signals:
     void autoResolution(int w, int h);
 
 public slots:
-    void searchCameras();
+    void setupResolution(int w=0, int h=0);
+    void scanCameras();
     void openCamera(int index=0);
     void closeCamera();
-    void poll();
-    void shutdown();
 
-    void setupResolution(int w=0, int h=0);
+protected slots:
+    void onThreadStarted();
+    void onClockTick();
 
 protected:
-    virtual void run();
-
     videoInput * m_cams;
     int m_openCam, m_resW, m_resH;
-    QTimer m_clock;
+    QTimer * m_clock;
 };
 
-#endif // VIDEOTHREAD_H
+#endif // VIDEOCAPTURE_H

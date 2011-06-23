@@ -1,24 +1,27 @@
 #include <QtGui/QApplication>
 #include "Display.h"
-#include "VideoThread.h"
+#include "VideoCapture.h"
+#include "ThreadWaiter.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QThread videoThread;
+
+    ThreadWaiter waiter;
+    waiter << videoThread;
+
     Display w;
-    VideoThread v;
+    VideoCapture v(&videoThread);
 
-    Q_ASSERT(w.connect(&v, SIGNAL(gotFrame(QImage)), SLOT(showFrame(QImage)), Qt::QueuedConnection));
-    Q_ASSERT(w.connect(&v, SIGNAL(foundCameras(QStringList)), SLOT(populateDeviceList(QStringList)),
-             Qt::QueuedConnection));
-    Q_ASSERT(w.connect(&v, SIGNAL(autoResolution(int,int)), SLOT(showResolution(int, int))));
+    Q_ASSERT(QObject::connect(&v, SIGNAL(gotFrame(QImage)), &w, SLOT(showFrame(QImage))));
+    Q_ASSERT(QObject::connect(&v, SIGNAL(foundCameras(QStringList)), &w, SLOT(populateDeviceList(QStringList))));
+    Q_ASSERT(QObject::connect(&v, SIGNAL(autoResolution(int,int)), &w, SLOT(showResolution(int, int))));
+    Q_ASSERT(QObject::connect(&w, SIGNAL(resolutionChosen(int,int)), &v, SLOT(setupResolution(int,int))));
+    Q_ASSERT(QObject::connect(&v, SIGNAL(foundCameras(QStringList)), &v, SLOT(openCamera())));
 
-    Q_ASSERT(v.connect(&w, SIGNAL(resolutionChosen(int,int)), SLOT(setupResolution(int,int))));
-
-    // autostart
-    Q_ASSERT(v.connect(&v, SIGNAL(foundCameras(QStringList)), SLOT(openCamera())));
-
-    v.start();
+    videoThread.start();
     w.show();
 
     return a.exec();

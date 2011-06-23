@@ -1,43 +1,42 @@
 #include <videoInput.h>
 
-#include "VideoThread.h"
+#include "VideoCapture.h"
 
 #include <QDebug>
 #include <QApplication>
 
-VideoThread::VideoThread(QObject *parent)
-    : QThread(parent)
+VideoCapture::VideoCapture(QThread * thread, QObject *parent)
+    : QObject(parent)
     , m_cams(0)
     , m_openCam(-1)
     , m_resW(0)
     , m_resH(0)
+    , m_clock(0)
 {
-
+    moveToThread(thread);
+    Q_ASSERT(connect(thread, SIGNAL(started()), SLOT(onThreadStarted())));
 }
 
-VideoThread::~VideoThread()
+VideoCapture::~VideoCapture()
 {
-    if (m_cams) {
-        if (m_openCam > -1)
-            m_cams->stopDevice(m_openCam);
-        delete m_cams;
-    }
+    qDebug() << "Shutting down video capture";
+    if (m_cams)
+        closeCamera();
 }
 
-void VideoThread::run()
+void VideoCapture::onThreadStarted()
 {
+    qDebug() << "Video thread started, initialize capture";
+    m_clock = new QTimer(this);
+    Q_ASSERT(m_clock);
+    Q_ASSERT(connect(m_clock, SIGNAL(timeout()), SLOT(onClockTick())));
+
     m_cams = new videoInput;
     Q_ASSERT(m_cams);
-    searchCameras();
-
-    Q_ASSERT(qApp);
-    Q_ASSERT(connect(qApp, SIGNAL(aboutToQuit()), SLOT(shutdown()), Qt::DirectConnection));
-    Q_ASSERT(connect(&m_clock, SIGNAL(timeout()), SLOT(poll())));
-
-    exec();
+    scanCameras();
 }
 
-void VideoThread::openCamera(int index)
+void VideoCapture::openCamera(int index)
 {
     Q_ASSERT(m_cams);
     if (index < -1 || index >= m_cams->devicesFound) {
@@ -46,18 +45,12 @@ void VideoThread::openCamera(int index)
     }
 
     closeCamera();
+
     m_openCam = index;
     if (m_openCam > -1) {
         m_cams->setIdealFramerate(m_openCam, 25);
         m_cams->setAutoReconnectOnFreeze(m_openCam,true,7);
 
-        /* select resolution?
-        if (ui->resolution->currentIndex()) {
-            QStringList strs = ui->resolution->currentText().split('x');
-            Q_ASSERT(strs.length() == 2);
-            m_cams->setupDevice(m_openCam, strs[0].toInt(), strs[1].toInt());
-        } else
-        */
         if (m_resW && m_resH)
             m_cams->setupDevice(m_openCam,m_resW,m_resH);
         else {
@@ -65,11 +58,11 @@ void VideoThread::openCamera(int index)
             // let the world know what windows has chosen for us...
             emit autoResolution( m_cams->getWidth(m_openCam), m_cams->getHeight(m_openCam) );
         }
-        m_clock.start(40);
+        m_clock->start(40);
     }
 }
 
-void VideoThread::poll()
+void VideoCapture::onClockTick()
 {
     Q_ASSERT(m_cams);
 
@@ -82,7 +75,7 @@ void VideoThread::poll()
     }
 }
 
-void VideoThread::searchCameras()
+void VideoCapture::scanCameras()
 {
     Q_ASSERT(m_cams);
 
@@ -94,22 +87,15 @@ void VideoThread::searchCameras()
     emit foundCameras(camNames);
 }
 
-void VideoThread::closeCamera()
+void VideoCapture::closeCamera()
 {
     Q_ASSERT(m_cams);
 
-    m_clock.stop();
     if (m_openCam > -1)
         m_cams->stopDevice(m_openCam);
 }
 
-void VideoThread::shutdown()
-{
-    exit();
-    wait(2000);
-}
-
-void VideoThread::setupResolution(int w, int h)
+void VideoCapture::setupResolution(int w, int h)
 {
     m_resW = w;
     m_resH = h;
