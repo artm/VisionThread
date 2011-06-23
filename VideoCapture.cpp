@@ -13,6 +13,9 @@ VideoCapture::VideoCapture(QThread * thread, QObject *parent)
     , m_resH(0)
     , m_clock(0)
 {
+    if (!thread)
+        thread = new QThread();
+
     moveToThread(thread);
     Q_ASSERT(connect(thread, SIGNAL(started()), SLOT(onThreadStarted())));
 }

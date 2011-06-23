@@ -7,13 +7,11 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    QThread videoThread;
+    Display w;
+    VideoCapture v;
 
     ThreadWaiter waiter;
-    waiter << videoThread;
-
-    Display w;
-    VideoCapture v(&videoThread);
+    waiter << v.thread();
 
     Q_ASSERT(QObject::connect(&v, SIGNAL(gotFrame(QImage)), &w, SLOT(showFrame(QImage))));
     Q_ASSERT(QObject::connect(&v, SIGNAL(foundCameras(QStringList)), &w, SLOT(populateDeviceList(QStringList))));
@@ -21,7 +19,7 @@ int main(int argc, char *argv[])
     Q_ASSERT(QObject::connect(&w, SIGNAL(resolutionChosen(int,int)), &v, SLOT(setupResolution(int,int))));
     Q_ASSERT(QObject::connect(&v, SIGNAL(foundCameras(QStringList)), &v, SLOT(openCamera())));
 
-    videoThread.start();
+    v.thread()->start();
     w.show();
 
     return a.exec();

@@ -12,7 +12,7 @@ class VideoCapture : public QObject
 {
     Q_OBJECT
 public:
-    explicit VideoCapture(QThread * thread, QObject *parent = 0);
+    explicit VideoCapture(QThread * thread = 0, QObject *parent = 0);
     ~VideoCapture();
 
 signals:
