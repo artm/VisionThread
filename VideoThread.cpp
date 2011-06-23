@@ -9,6 +9,8 @@ VideoThread::VideoThread(QObject *parent)
     : QThread(parent)
     , m_cams(0)
     , m_openCam(-1)
+    , m_resW(0)
+    , m_resH(0)
 {
 
 }
@@ -56,7 +58,13 @@ void VideoThread::openCamera(int index)
             m_cams->setupDevice(m_openCam, strs[0].toInt(), strs[1].toInt());
         } else
         */
-        m_cams->setupDevice(m_openCam,320,240); // force resolution for iSight in Parallels
+        if (m_resW && m_resH)
+            m_cams->setupDevice(m_openCam,m_resW,m_resH);
+        else {
+            m_cams->setupDevice(m_openCam);
+            // let the world know what windows has chosen for us...
+            emit autoResolution( m_cams->getWidth(m_openCam), m_cams->getHeight(m_openCam) );
+        }
         m_clock.start(40);
     }
 }
@@ -99,5 +107,17 @@ void VideoThread::shutdown()
 {
     exit();
     wait(2000);
+}
+
+void VideoThread::setupResolution(int w, int h)
+{
+    m_resW = w;
+    m_resH = h;
+
+    // if camera is open...
+    if (m_cams && m_openCam > -1) {
+        // ... reopen with new settings
+        openCamera(m_openCam);
+    }
 }
 

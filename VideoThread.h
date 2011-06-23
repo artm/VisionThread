@@ -14,23 +14,27 @@ class VideoThread : public QThread
 public:
     explicit VideoThread(QObject *parent = 0);
     ~VideoThread();
-    virtual void run();
+
 
 signals:
     void foundCameras(QStringList);
     void gotFrame(QImage frame);
+    void autoResolution(int w, int h);
 
 public slots:
     void searchCameras();
     void openCamera(int index=0);
     void closeCamera();
     void poll();
-
     void shutdown();
 
+    void setupResolution(int w=0, int h=0);
+
 protected:
+    virtual void run();
+
     videoInput * m_cams;
-    int m_openCam;
+    int m_openCam, m_resW, m_resH;
     QTimer m_clock;
 };
 

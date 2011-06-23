@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
+    <item row="2" column="0">
      <widget class="QLabel" name="videoLabel">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -31,8 +31,33 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0">
-     <widget class="QComboBox" name="videoDevices"/>
+    <item row="1" column="0">
+     <widget class="QWidget" name="videoControls" native="true">
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QComboBox" name="videoDevices"/>
+       </item>
+       <item>
+        <widget class="QComboBox" name="videoResolution">
+         <item>
+          <property name="text">
+           <string>Let OS decide</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>320x240</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>VGA (640x480)</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </item>
    </layout>
   </widget>
