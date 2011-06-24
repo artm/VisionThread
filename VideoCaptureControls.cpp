@@ -23,11 +23,11 @@ VideoCaptureControls::VideoCaptureControls(QWidget *parent) :
     m_waiter = new ThreadWaiter(this);
     m_capture = new VideoCapture(m_waiter->makeThread());
 
-    Q_ASSERT(connect(m_capture, SIGNAL(foundCameras(QStringList)), SLOT(populateDeviceList(QStringList))));
+    Q_ASSERT(connect(m_capture, SIGNAL(foundDevices(QStringList)), SLOT(populateDeviceList(QStringList))));
     Q_ASSERT(connect(m_capture, SIGNAL(autoResolution(int,int)), SLOT(showResolution(int, int))));
     Q_ASSERT(connect(this, SIGNAL(resolutionChosen(int,int)), m_capture, SLOT(setupResolution(int,int))));
     Q_ASSERT(connect(m_resolutionSelector, SIGNAL(activated(QString)), SLOT(onResolutionChosen(QString))));
-    Q_ASSERT(connect(this, SIGNAL(deviceChosen(int)), m_capture, SLOT(openCamera(int))));
+    Q_ASSERT(connect(this, SIGNAL(deviceChosen(int)), m_capture, SLOT(openDevice(int))));
     Q_ASSERT(connect(m_deviceSelector, SIGNAL(currentIndexChanged(int)), SLOT(onDeviceChosen(int))));
 
     setEnabled(false);

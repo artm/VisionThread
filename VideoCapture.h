@@ -16,15 +16,15 @@ public:
     ~VideoCapture();
 
 signals:
-    void foundCameras(QStringList);
+    void foundDevices(QStringList);
     void gotFrame(QImage frame);
     void autoResolution(int w, int h);
 
 public slots:
     void setupResolution(int w=0, int h=0);
-    void scanCameras();
-    void openCamera(int index=0);
-    void closeCamera();
+    void scanForDevices();
+    void openDevice(int index=0);
+    void closeDevice();
 
 protected slots:
     void onThreadStarted();

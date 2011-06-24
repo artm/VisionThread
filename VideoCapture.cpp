@@ -23,7 +23,7 @@ VideoCapture::VideoCapture(QThread * thread, QObject *parent)
 VideoCapture::~VideoCapture()
 {
     if (m_cams) {
-        closeCamera();
+        closeDevice();
     }
 }
 
@@ -35,10 +35,10 @@ void VideoCapture::onThreadStarted()
 
     m_cams = new videoInput;
     Q_ASSERT(m_cams);
-    scanCameras();
+    scanForDevices();
 }
 
-void VideoCapture::openCamera(int index)
+void VideoCapture::openDevice(int index)
 {
     Q_ASSERT(m_cams);
     if (index < 0 || index >= m_cams->devicesFound) {
@@ -46,7 +46,7 @@ void VideoCapture::openCamera(int index)
         return;
     }
 
-    closeCamera();
+    closeDevice();
 
     m_openCam = index;
 
@@ -76,7 +76,7 @@ void VideoCapture::onClockTick()
     }
 }
 
-void VideoCapture::scanCameras()
+void VideoCapture::scanForDevices()
 {
     Q_ASSERT(m_cams);
 
@@ -85,10 +85,10 @@ void VideoCapture::scanCameras()
     QStringList camNames;
     for(int i = 0; i < nCams; ++i)
         camNames << m_cams->getDeviceName(i);
-    emit foundCameras(camNames);
+    emit foundDevices(camNames);
 }
 
-void VideoCapture::closeCamera()
+void VideoCapture::closeDevice()
 {
     Q_ASSERT(m_cams);
 
@@ -104,7 +104,7 @@ void VideoCapture::setupResolution(int w, int h)
     // if camera is open...
     if (m_cams && m_openCam > -1) {
         // ... reopen with new settings
-        openCamera(m_openCam);
+        openDevice(m_openCam);
     }
 }
 
