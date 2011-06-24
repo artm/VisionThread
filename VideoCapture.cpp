@@ -24,13 +24,11 @@ VideoCapture::~VideoCapture()
 {
     if (m_cams) {
         closeCamera();
-        qDebug() << "Shutting down video capture";
     }
 }
 
 void VideoCapture::onThreadStarted()
 {
-    qDebug() << "Video thread started, initialize capture";
     m_clock = new QTimer(this);
     Q_ASSERT(m_clock);
     Q_ASSERT(connect(m_clock, SIGNAL(timeout()), SLOT(onClockTick())));

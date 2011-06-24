@@ -26,10 +26,11 @@ VideoCaptureControls::VideoCaptureControls(QWidget *parent) :
     Q_ASSERT(connect(m_capture, SIGNAL(foundCameras(QStringList)), SLOT(populateDeviceList(QStringList))));
     Q_ASSERT(connect(m_capture, SIGNAL(autoResolution(int,int)), SLOT(showResolution(int, int))));
     Q_ASSERT(connect(this, SIGNAL(resolutionChosen(int,int)), m_capture, SLOT(setupResolution(int,int))));
-    Q_ASSERT(connect(m_resolutionSelector, SIGNAL(activated(QString)), SLOT(resolutionChosen(QString))));
+    Q_ASSERT(connect(m_resolutionSelector, SIGNAL(activated(QString)), SLOT(onResolutionChosen(QString))));
     Q_ASSERT(connect(this, SIGNAL(deviceChosen(int)), m_capture, SLOT(openCamera(int))));
-    Q_ASSERT(connect(m_deviceSelector, SIGNAL(currentIndexChanged(int)), SIGNAL(deviceChosen(int))));
+    Q_ASSERT(connect(m_deviceSelector, SIGNAL(currentIndexChanged(int)), SLOT(onDeviceChosen(int))));
 
+    setEnabled(false);
     m_capture->thread()->start();
 }
 
@@ -50,7 +51,7 @@ void VideoCaptureControls::populateDeviceList(const QStringList &devNames)
     }
 }
 
-void VideoCaptureControls::resolutionChosen(QString resolution)
+void VideoCaptureControls::onResolutionChosen(QString resolution)
 {
     QRegExp re("(\\d+)x(\\d+)");
     if (resolution.contains(re)) {
@@ -121,7 +122,13 @@ void VideoCaptureControls::load(QSettings &s)
         resName = m_resolutionSelector->itemText(0);
     }
     m_resolutionSelector->setCurrentIndex(index);
-    resolutionChosen(resName);
+    onResolutionChosen(resName);
+}
+
+void VideoCaptureControls::onDeviceChosen(int id)
+{
+    if (isEnabled())
+        emit deviceChosen(id);
 }
 
 

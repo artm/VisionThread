@@ -25,8 +25,9 @@ signals:
 
 public slots:
     void populateDeviceList(const QStringList& devNames);
+    void onDeviceChosen(int id);
     // user has chosen via combo
-    void resolutionChosen(QString resolution);
+    void onResolutionChosen(QString resolution);
     // OS has chosen - should reflect in the combo
     void showResolution(int w, int h);
 
