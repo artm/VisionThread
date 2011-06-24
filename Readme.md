@@ -45,3 +45,10 @@ Actually, we went further and hid the VideoCapture (together with its thread and
 ## Persistence
 
 The client code may ask the VideoCaptureControls to persist in QSettings instance.
+
+## Processing
+
+There will be two sorts of processing - in video thread and outside. Outside is already demonstrated by the display -
+just connecting a slot to the gotFrame(QImage) is enough. To place a processor inside video thread it is enough to make
+it a child of the VideoCapture object (returned by VideoCaptureControls::capture()).
+

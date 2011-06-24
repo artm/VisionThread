@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+class FaceTracker;
+
 namespace Ui {
     class Display;
 }
@@ -19,9 +21,11 @@ signals:
 
 public slots:
     void showFrame(const QImage& frame);
+    void showFaces(const QImage& frame, QList<QRect> faces);
 
 private:
     Ui::Display *ui;
+    FaceTracker * m_tracker;
 };
 
 #endif // DISPLAY_H
