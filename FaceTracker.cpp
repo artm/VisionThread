@@ -103,13 +103,7 @@ void FaceTracker::detect(const QImage& frame)
     // detect...
     std::vector<cv::Rect> rects;
 
-    int maxSize = frame.height() * 2 / 3;
-
-    m_private->m_cvDetector->detectMultiScale( cvFrame, rects, 1.1, 3,
-                                    cv::CascadeClassifier::FIND_BIGGEST_OBJECT
-                                    | cv::CascadeClassifier::DO_ROUGH_SEARCH
-                                    | cv::CascadeClassifier::DO_CANNY_PRUNING,
-                                    cv::Size(10, 10), cv::Size(maxSize, maxSize));
+    m_private->m_cvDetector->detectMultiScale( cvFrame, rects, 1.1, 3 );
     // convert the results to qt rects
     foreach(cv::Rect r, rects)
         faces.push_back( QRect(r.x, r.y, r.width, r.height) );
