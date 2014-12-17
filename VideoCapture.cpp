@@ -1,5 +1,8 @@
 #ifdef USE_VIDEO_INPUT
 #include <videoInput.h>
+#else
+#include <cv.h>
+#include <highgui.h>
 #endif
 
 #include "VideoCapture.h"
@@ -7,28 +10,34 @@
 #include <QDebug>
 #include <QApplication>
 
+struct VideoCapture::Private {
+#if USE_VIDEO_INPUT
+    videoInput * m_cap;
+#else
+    cv::VideoCapture * m_cap;
+#endif
+    Private()
+        : m_cap(0)
+    {}
+};
+
 VideoCapture::VideoCapture(QThread * thread, QObject *parent)
     : QObject(parent)
-    , m_cams(0)
-    , m_openCam(-1)
+    , m_private(new Private)
+    , m_openDevice(-1)
     , m_resW(0)
     , m_resH(0)
     , m_clock(0)
 {
-    if (!thread)
-        thread = new QThread();
-
+    if (!thread) thread = new QThread();
     moveToThread(thread);
     Q_ASSERT(connect(thread, SIGNAL(started()), SLOT(onThreadStarted())));
 }
 
 VideoCapture::~VideoCapture()
 {
-#ifdef USE_VIDEO_INPUT
-    if (m_cams) {
+    if (m_private->m_cap)
         closeDevice();
-    }
-#endif
 }
 
 void VideoCapture::onThreadStarted()
@@ -38,63 +47,87 @@ void VideoCapture::onThreadStarted()
     Q_ASSERT(connect(m_clock, SIGNAL(timeout()), SLOT(onClockTick())));
 
 #ifdef USE_VIDEO_INPUT
-    m_cams = new videoInput;
-    Q_ASSERT(m_cams);
-    scanForDevices();
+    m_private->m_cap = new videoInput;
+#else
+    m_private->m_cap = new cv::VideoCapture;
 #endif
+    Q_ASSERT(m_private->m_cap);
+    scanForDevices();
 }
 
 void VideoCapture::openDevice(int index)
 {
-#ifdef USE_VIDEO_INPUT
-    Q_ASSERT(m_cams);
-    if (index < 0 || index >= m_cams->devicesFound) {
+    Q_ASSERT(m_private->m_cap);
+    if (index < 0 || index >= m_deviceCount) {
         qCritical() << "Camera index out of range:" << index;
         return;
     }
 
     closeDevice();
 
-    m_openCam = index;
-
-    m_cams->setIdealFramerate(m_openCam, 25);
-    m_cams->setAutoReconnectOnFreeze(m_openCam,true,7);
+    m_openDevice = index;
+#ifdef USE_VIDEO_INPUT
+    m_private->m_cap->setIdealFramerate(m_openDevice, 25);
+    m_private->m_cap->setAutoReconnectOnFreeze(m_openDevice,true,7);
 
     if (m_resW && m_resH)
-        m_cams->setupDevice(m_openCam,m_resW,m_resH);
-    else {
-        m_cams->setupDevice(m_openCam);
-        // let the world know what windows has chosen for us...
-        emit autoResolution( m_cams->getWidth(m_openCam), m_cams->getHeight(m_openCam) );
+        m_private->m_cap->setupDevice(m_openDevice,m_resW,m_resH);
+    else
+        m_private->m_cap->setupDevice(m_openDevice);
+
+    m_resW = m_private->m_cap->getWidth(m_openDevice);
+    m_resH = m_private->m_cap->getHeight(m_openDevice);
+#else
+    m_private->m_cap->set(CV_CAP_PROP_FPS, 25);
+    if (m_resW && m_resH) {
+        m_private->m_cap->set(CV_CAP_PROP_FRAME_WIDTH, m_resW);
+        m_private->m_cap->set(CV_CAP_PROP_FRAME_HEIGHT, m_resH);
     }
+    if (!m_private->m_cap->open(index)) {
+        qCritical() << "Failed to open camera";
+        m_openDevice = -1;
+        return;
+    }
+    // properties are just hints - figure them out
+    m_resW = (int)m_private->m_cap->get(CV_CAP_PROP_FRAME_WIDTH);
+    m_resH = (int)m_private->m_cap->get(CV_CAP_PROP_FRAME_HEIGHT);
 #endif
+    emit autoResolution( m_resW, m_resH );
     m_clock->start(40);
 }
 
 void VideoCapture::onClockTick()
 {
-#ifdef USE_VIDEO_INPUT
-    Q_ASSERT(m_cams);
+    Q_ASSERT(m_private->m_cap);
 
-    if ((m_openCam > -1) && m_cams->isFrameNew(m_openCam)) {
-        QImage frame  = QImage(m_cams->getWidth(m_openCam),
-                               m_cams->getHeight(m_openCam),
-                               QImage::Format_RGB888);
-        m_cams->getPixels(m_openCam, frame.bits(), true, true);
+    QImage frame  = QImage(m_resW, m_resH, QImage::Format_RGB888);
+
+#ifdef USE_VIDEO_INPUT
+    if ((m_openDevice > -1) && m_private->m_cap->isFrameNew(m_openDevice)) {
+        m_private->m_cap->getPixels(m_openDevice, frame.bits(), true, true);
+        emit gotFrame(frame);
+    }
+#else
+    if ((m_openDevice > -1) && m_private->m_cap->grab()) {
+        // wrap a cv::Mat around a frame...
+        cv::Mat mat;
+        m_private->m_cap->retrieve(mat);
         emit gotFrame(frame);
     }
 #endif
+
+
 }
 
 void VideoCapture::scanForDevices()
 {
     QStringList camNames;
 #ifdef USE_VIDEO_INPUT
-    Q_ASSERT(m_cams);
+    Q_ASSERT(m_private->m_cap);
     // stupid, that videoInput doesn't do that itself, but...
-    int nCams = m_cams->devicesFound = m_cams->listDevices();
+    int nCams = m_private->m_cap->devicesFound = m_private->m_cap->listDevices();
     for(int i = 0; i < nCams; ++i)
-        camNames << m_cams->getDeviceName(i);
+        camNames << m_private->m_cap->getDeviceName(i);
 #endif
     emit foundDevices(camNames);
 }
@@ -102,9 +135,9 @@ void VideoCapture::scanForDevices()
 void VideoCapture::closeDevice()
 {
 #ifdef USE_VIDEO_INPUT
-    Q_ASSERT(m_cams);
-    if (m_openCam > -1)
-        m_cams->stopDevice(m_openCam);
+    Q_ASSERT(m_private->m_cap);
+    if (m_openDevice > -1)
+        m_private->m_cap->stopDevice(m_openDevice);
 #endif
 }
 
@@ -115,9 +148,9 @@ void VideoCapture::setupResolution(int w, int h)
 
 #ifdef USE_VIDEO_INPUT
     // if camera is open...
-    if (m_cams && m_openCam > -1) {
+    if (m_private->m_cap && m_openDevice > -1) {
         // ... reopen with new settings
-        openDevice(m_openCam);
+        openDevice(m_openDevice);
     }
 #endif
 }

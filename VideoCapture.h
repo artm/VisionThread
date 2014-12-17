@@ -6,8 +6,6 @@
 #include <QTimer>
 #include <QStringList>
 
-class videoInput;
-
 class VideoCapture : public QObject
 {
     Q_OBJECT
@@ -27,12 +25,14 @@ public slots:
     void closeDevice();
 
 protected slots:
-    void onThreadStarted();
-    void onClockTick();
+    virtual void onThreadStarted();
+    virtual void onClockTick();
 
 protected:
-    videoInput * m_cams;
-    int m_openCam, m_resW, m_resH;
+    struct Private;
+    Private * m_private;
+    int m_deviceCount;
+    int m_openDevice, m_resW, m_resH;
     QTimer * m_clock;
 };
 
